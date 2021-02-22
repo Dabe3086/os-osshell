@@ -47,7 +47,45 @@ int main (int argc, char **argv)
     //  For all other commands, check if an executable by that name is in one of the PATH directories
     //   If yes, execute it
     //   If no, print error statement: "<command_name>: Error command not found" (do include newline)
+    
+    int j = 0;
+    while(1)
+    {
+        char *character[128];
+        char **char_input;
+        allocateArrayOfCharArrays(&char_input, 2, 128);
 
+        std::cout << "osshell> ";
+        std::cin.getline(*character, 128);
+        printf("char: %s\n", *character);
+        std::string input(*character);
+        command_list[j] = *character;
+        printf("command_list: %s\n", command_list[j]);
+        splitString(input, ' ', char_input);
+        printf("char_input: %s\n", char_input[1]);
+        if(strcmp(char_input[0], "exit") == 0)
+        {
+            break;
+        }
+        else if(strcmp(char_input[0], "history") == 0)
+        {
+            int k, location;
+            if(char_input[1] != NULL)
+            {
+                location = atol(char_input[1]);
+                printf("location: %d\n", location);
+            }
+            else{
+                location = j + 1;
+            }
+            
+            for(k = j + 1 - location; k < j + 1; k++)
+            {
+                printf("%d: %s\n", k, command_list[k]);
+            }
+        }
+        j++;
+    }
     // Free allocated memory
     freeArrayOfCharArrays(os_path_list, 16);
     freeArrayOfCharArrays(command_list, 32);
