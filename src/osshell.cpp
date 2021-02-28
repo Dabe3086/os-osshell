@@ -212,6 +212,7 @@ void splitString(std::string text, char d, std::vector<std::string>& result)
     std::string token;
     result.clear();
     for (i = 0; i < text.length(); i++)
+<<<<<<< HEAD
     {
         char c = text[i];
         switch (state) {
@@ -256,6 +257,52 @@ void splitString(std::string text, char d, std::vector<std::string>& result)
     }
     if (state != NONE)
     {
+=======
+    {
+        char c = text[i];
+        switch (state) {
+            case NONE:
+                if (c != d)
+                {
+                    if (c == '\"')
+                    {
+                        state = IN_STRING;
+                        token = "";
+                    }
+                    else
+                    {
+                        state = IN_WORD;
+                        token = c;
+                    }
+                }
+                break;
+            case IN_WORD:
+                if (c == d)
+                {
+                    result.push_back(token);
+                    state = NONE;
+                }
+                else
+                {
+                    token += c;
+                }
+                break;
+            case IN_STRING:
+                if (c == '\"')
+                {
+                    result.push_back(token);
+                    state = NONE;
+                }
+                else
+                {
+                    token += c;
+                }
+                break;
+        }
+    }
+    if (state != NONE)
+    {
+>>>>>>> 9556d423a5fd7646809103cff025b5bbef0afda9
         result.push_back(token);
     }
 }
@@ -292,4 +339,8 @@ void freeArrayOfCharArrays(char **array, size_t array_length)
         }
     }
     delete[] array;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 9556d423a5fd7646809103cff025b5bbef0afda9
