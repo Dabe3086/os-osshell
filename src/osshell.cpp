@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <unistd.h>
+#include <sys/wait.h>
 
 void splitString(std::string text, char d, std::vector<std::string>& result);
 void vectorOfStringsToArrayOfCharArrays(std::vector<std::string>& list, char ***result);
@@ -87,8 +88,25 @@ int main (int argc, char **argv)
     /************************************************************************************
      *   End example code                                                               *
      ************************************************************************************/
-    int j = 0;
-    while(1)
+
+    FILE *file;
+    if (file = fopen("history.txt", "r")) 
+    {
+        //printf("file exists");
+        char hold[128];
+        while(fgets(hold, 128, file) != NULL) {
+            //std::cout << hold;
+            strtok(hold, "\n");
+            history.push_back(hold);
+            
+        }
+
+        fclose(file);
+    }
+    
+    bool keepGoing = true;
+    int j = history.size();
+    while(keepGoing)
     {
         char *character[128];
         char **char_input;
@@ -98,6 +116,7 @@ int main (int argc, char **argv)
         std::string input = *character;
         history.push_back(*character);
         vectorOfStringsToArrayOfCharArrays(history, &history_exec);
+        //std::cout << history.back();
         splitString(input, ' ', command_list);
         vectorOfStringsToArrayOfCharArrays(command_list, &command_list_exec);
 
@@ -105,21 +124,43 @@ int main (int argc, char **argv)
         {
             history.pop_back();
             vectorOfStringsToArrayOfCharArrays(history, &history_exec);
+            j--;
         }
 
         else if(strcmp(command_list_exec[0], "exit") == 0)
         {
+            
+            vectorOfStringsToArrayOfCharArrays(history, &history_exec);
+            //std::cout << command_list_exec[0];
+            FILE *file;
+            file = fopen("history.txt", "w");
+            
+            for(int i = 0; i < history.size(); i++) {
+                fputs(history_exec[i], file);
+                fputs("\n", file);
+            }
+            
+            fclose(file);
             break;
         } else if(strcmp(command_list_exec[0], "history") == 0)
         {
             if(command_list_exec[1] == NULL) {
-                for(int i = 0; i < history.size(); i++) 
-                {
-                    printf("%d: %s\n", i, history_exec[i]);
+                if(history.size() != 0) {
+                    for(int i = 0; i < history.size() - 1; i++) 
+                    {
+                        if(i+1 > 9) {
+                            printf(" %d: %s\n", i + 1, history_exec[i]);
+                        } else {
+                            printf("  %d: %s\n", i + 1, history_exec[i]);
+                        }
+                    }
                 }
+                
             } else if(strcmp(command_list_exec[1], "clear") == 0)
             {
                 history.clear();
+                vectorOfStringsToArrayOfCharArrays(history, &history_exec);
+                j = -1;
             } else 
             {
                 int isDigit = 1;
@@ -136,18 +177,28 @@ int main (int argc, char **argv)
                 }
                 if(isDigit == 1)
                 {
-                    
-                    if(atoi(command_list_exec[1]) > history.size()) 
-                    {
-                        for(int i = 0; i < history.size(); i++) 
+                    if(history.size() != 0) {
+                        if(atoi(command_list_exec[1]) > history.size()) 
                         {
-                            printf("%d: %s\n", i, history_exec[i]);
-                        }
-                    } else 
-                    {
-                        for(int i = history.size() - atoi(command_list_exec[1]); i < history.size(); i++) 
+                            for(int i = 0; i < history.size() - 1; i++) 
+                            {
+                                if(i+1 > 9) {
+                                    printf(" %d: %s\n", i + 1, history_exec[i]);
+                                } else {
+                                    printf("  %d: %s\n", i + 1, history_exec[i]);
+                                }
+                            }
+                        } else 
                         {
-                            printf("%d: %s\n", i, history_exec[i]);
+                            for(int i = history.size() - 1 - atoi(command_list_exec[1]); i < history.size() - 1; i++) 
+                            {
+                                if(i+1 > 9) {
+                                    printf(" %d: %s\n", i + 1, history_exec[i]);
+                                } else {
+                                    printf("  %d: %s\n", i + 1, history_exec[i]);
+                                }
+                                
+                            }
                         }
                     } 
 
@@ -158,6 +209,8 @@ int main (int argc, char **argv)
             }
         }
         else{
+            
+
             FILE *file;
             bool fileFound = false;
             for (int i = 0; i < os_path_list.size(); i++)
@@ -185,9 +238,27 @@ int main (int argc, char **argv)
             if(fileFound == false) {
                 std::cout << history.back() << ": Error command not found\n";
             } else {
-                system(history_exec[j]);
+                //beginning of fork
+                pid_t pid;
+                int status;
                 
+                pid = fork();
+                
+                //child
+                if(pid == 0) {
+                    //std::cout << "executing\n" << history_exec[j] << j << "\n";
+                    system(history_exec[j]);
+                    
+                } else {//parent
+                    
+                    waitpid(pid, &status, 0);
+                    exit(0);
+                }
+                
+                
+                //end of forked
             }
+            
             
             
             
@@ -212,7 +283,6 @@ void splitString(std::string text, char d, std::vector<std::string>& result)
     std::string token;
     result.clear();
     for (i = 0; i < text.length(); i++)
-<<<<<<< HEAD
     {
         char c = text[i];
         switch (state) {
@@ -257,52 +327,6 @@ void splitString(std::string text, char d, std::vector<std::string>& result)
     }
     if (state != NONE)
     {
-=======
-    {
-        char c = text[i];
-        switch (state) {
-            case NONE:
-                if (c != d)
-                {
-                    if (c == '\"')
-                    {
-                        state = IN_STRING;
-                        token = "";
-                    }
-                    else
-                    {
-                        state = IN_WORD;
-                        token = c;
-                    }
-                }
-                break;
-            case IN_WORD:
-                if (c == d)
-                {
-                    result.push_back(token);
-                    state = NONE;
-                }
-                else
-                {
-                    token += c;
-                }
-                break;
-            case IN_STRING:
-                if (c == '\"')
-                {
-                    result.push_back(token);
-                    state = NONE;
-                }
-                else
-                {
-                    token += c;
-                }
-                break;
-        }
-    }
-    if (state != NONE)
-    {
->>>>>>> 9556d423a5fd7646809103cff025b5bbef0afda9
         result.push_back(token);
     }
 }
@@ -339,8 +363,4 @@ void freeArrayOfCharArrays(char **array, size_t array_length)
         }
     }
     delete[] array;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 9556d423a5fd7646809103cff025b5bbef0afda9
