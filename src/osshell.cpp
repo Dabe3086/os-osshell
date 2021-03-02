@@ -207,6 +207,23 @@ int main (int argc, char **argv)
                     printf("Error: history expects an integer > 0 (or 'clear')\n");
                 }
             }
+        } else if(command_list_exec[0][0] == '.' || command_list_exec[0][0] == '/') {
+            //beginning of fork
+                pid_t pid;
+                int status;
+                
+                pid = fork();
+                
+                //child
+                if(pid == 0) {
+                    //std::cout << "executing\n" << history_exec[j] << j << "\n";
+                    system(command_list_exec[0]);
+                    
+                } else {//parent
+                    
+                    waitpid(pid, &status, 0);
+                    exit(0);
+                }
         }
         else{
             
